@@ -476,6 +476,36 @@ namespace YAML {
     }
   };
 
+  inline bool is_max(const Node& node)
+  {
+    return node.IsMap() && (node.size() == 1) && node["max"] &&
+        node["max"].IsSequence() && (node["max"].size() == 2);
+  }
+
+  template<>
+  struct convert<giskard::MaxSpecPtr>
+  {
+    static Node encode(const giskard::MaxSpecPtr& rhs) 
+    {
+      Node node;
+      node["max"][0] = rhs->get_lhs();
+      node["max"][1] = rhs->get_rhs();
+      return node;
+    }
+  
+    static bool decode(const Node& node, giskard::MaxSpecPtr& rhs) 
+    {
+      if(!is_max(node))
+        return false;
+
+      rhs = giskard::MaxSpecPtr(new giskard::MaxSpec()); 
+      rhs->set_lhs(node["max"][0].as< giskard::DoubleSpecPtr >());
+      rhs->set_rhs(node["max"][1].as< giskard::DoubleSpecPtr >());
+
+      return true;
+    }
+  };
+
   inline bool is_double_if(const Node& node)
   {
     return node.IsMap() && (node.size() == 1) && node["double-if"] &&
@@ -594,6 +624,12 @@ namespace YAML {
             boost::dynamic_pointer_cast<giskard::MinSpec>(rhs);
         node = p;
       }
+      else if(boost::dynamic_pointer_cast<giskard::MaxSpec>(rhs).get())
+      {
+        giskard::MaxSpecPtr p = 
+            boost::dynamic_pointer_cast<giskard::MaxSpec>(rhs);
+        node = p;
+      }
       else if(boost::dynamic_pointer_cast<giskard::AbsSpec>(rhs).get())
       {
         giskard::AbsSpecPtr p = 
@@ -684,6 +720,11 @@ namespace YAML {
         rhs = node.as<giskard::MinSpecPtr>();
         return true;
       }
+      else if(is_max(node))
+      {
+        rhs = node.as<giskard::MaxSpecPtr>();
+        return true;
+      }
       else if(is_abs(node))
       {
         rhs = node.as<giskard::AbsSpecPtr>();
@@ -699,8 +740,10 @@ namespace YAML {
         rhs = node.as<giskard::DoubleIfSpecPtr>();
         return true;
       }
-      else
+      else {
+        std::cout << "Unparsable node: " << node << std::endl;
         return false;
+      }
     }
   };
  
@@ -1091,8 +1134,10 @@ namespace YAML {
         rhs = node.as<giskard::VectorRotationVectorSpecPtr>();
         return true;
       }
-      else
+      else {
+        std::cout << "Unparsable node: " << node << std::endl; 
         return false;
+      }
     }
   };
 
@@ -1382,8 +1427,10 @@ namespace YAML {
         rhs = node.as<giskard::RotationMultiplicationSpecPtr>();
         return true;
       }
-      else
+      else {
+        std::cout << "Unparsable node: " << node << std::endl;
         return false;
+      }
     }
   }; 
 
@@ -1556,8 +1603,10 @@ namespace YAML {
         rhs = node.as<giskard::FrameReferenceSpecPtr>();
         return true;
       }
-      else
+      else {
+        std::cout << "Unparsable node: " << node << std::endl;
         return false;
+      }
     }
   };
 
@@ -1571,7 +1620,7 @@ namespace YAML {
         is_double_norm_of(node) || is_double_multiplication(node) || is_double_division(node) ||
         is_double_addition(node) || is_double_subtraction(node) ||
         is_x_coord_of(node) || is_y_coord_of(node) || is_z_coord_of(node) ||
-        is_vector_dot(node) || is_min(node) || is_double_if(node) || is_abs(node) ||
+        is_vector_dot(node) || is_min(node) || is_max(node) || is_double_if(node) || is_abs(node) ||
         is_fmod(node);
   }
 
@@ -1639,8 +1688,10 @@ namespace YAML {
         rhs = node.as<giskard::FrameSpecPtr>();
         return true;
       }
-      else
+      else {
+        std::cout << "Unparsable node: " << node << std::endl;
         return false;
+      }
     }
   };
 
