@@ -2261,9 +2261,22 @@ const VectorSpecPtr& get_lhs() const
 
   typedef std::vector<ScopeEntry> ScopeSpec;
 
-  class ControllableConstraintSpec
+  class ControllableConstraintSpec : public Spec
   {
     public:
+      virtual bool equals(const Spec& other) const {
+        if (!dynamic_cast<const ControllableConstraintSpec*>(&other))
+          return false;
+
+        const ControllableConstraintSpec* b = dynamic_cast<const ControllableConstraintSpec*>(&other);
+
+        return b->lower_ && lower_ && lower_->equals(*b->lower_)
+               && b->upper_ && upper_ && upper_->equals(*b->upper_)
+               && b->weight_ && weight_ && weight_->equals(*b->weight_)
+               && b->input_number_ == input_number_
+               && name_.compare(b->name_) == 0;
+      }
+
       giskard::DoubleSpecPtr lower_, upper_, weight_;
       size_t input_number_;
       std::string name_;
@@ -2271,18 +2284,41 @@ const VectorSpecPtr& get_lhs() const
 
   typedef typename boost::shared_ptr<ControllableConstraintSpec> ControllableConstraintSpecPtr;
   
-  class SoftConstraintSpec
+  class SoftConstraintSpec : public Spec
   {
     public:
+      virtual bool equals(const Spec& other) const {
+        if (!dynamic_cast<const SoftConstraintSpec*>(&other))
+          return false;
+
+        const SoftConstraintSpec* b = dynamic_cast<const SoftConstraintSpec*>(&other);
+
+        return b->expression_ && expression_ && expression_->equals(*b->expression_)
+               && b->lower_ && lower_ && lower_->equals(*b->lower_)
+               && b->upper_ && upper_ && upper_->equals(*b->upper_)
+               && b->weight_ && weight_ && weight_->equals(*b->weight_)
+               && name_.compare(b->name_) == 0;
+      }
+
       giskard::DoubleSpecPtr expression_, lower_, upper_, weight_;
       std::string name_;
   };
 
   typedef typename boost::shared_ptr<SoftConstraintSpec> SoftConstraintSpecPtr;
 
-  class HardConstraintSpec
+  class HardConstraintSpec : public Spec
   {
     public:
+      virtual bool equals(const Spec& other) const {
+        if (!dynamic_cast<const HardConstraintSpec*>(&other))
+          return false;
+
+        const HardConstraintSpec* b = dynamic_cast<const HardConstraintSpec*>(&other);
+
+        return b->expression_ && expression_ && expression_->equals(*b->expression_)
+               && b->lower_ && lower_ && lower_->equals(*b->lower_)
+               && b->upper_ && upper_ && upper_->equals(*b->upper_);
+      }
       giskard::DoubleSpecPtr expression_, lower_, upper_;
   };
 

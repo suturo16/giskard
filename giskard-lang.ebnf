@@ -1,0 +1,48 @@
+<giskardController> := <scope> <controllableConstraints> <softConstraints> <hardConstraints>
+
+<scope> := {<expr>}
+
+<expr>  := <doubleExpr> | <vectorExpr> | <frameExpr> | <rotExpr>
+
+<doubleExpr> := <doubleExpr> + <doubleExpr> 
+			| <constDouble>
+			| <doubleExpr> * <doubleExpr> 
+			| <vectorExpr> * <vectorExpr>
+			| <vectorExpr>.x
+			| <vectorExpr>.y
+			| <vectorExpr>.z
+			| input(<int>)
+			| norm(<vectorExpr>)
+			| sin(<doubleExpr>)
+			| cos(<doubleExpr>)
+			| abs(<doubleExpr>)
+			| tan(<doubleExpr>)
+			| asin(<doubleExpr>)
+			| acos(<doubleExpr>)
+			| atan(<doubleExpr>)
+			| min(<doubleExpr>, <doubleExpr>)
+			| max(<doubleExpr>, <doubleExpr>)
+
+<vectorExpr>:= vec3(<doubleExpr>, <doubleExpr>, <doubleExpr>)
+			| -<vectorExpr>
+			| originOf(<frameExpr>)
+			| <vectorExpr> + <vectorExpr>
+			| <vectorExpr> - <vectorExpr>
+			| <doubleExpr> * <vectorExpr>
+			| <vectorExpr> * <doubleExpr>
+			| cross(<vectorExpr>, <vectorExpr>)
+			| <rotExpr> * <vectorExpr>
+			| <frameExpr> * <vectorExpr>
+
+<rotExpr>   := quat(constDouble, constDouble, constDouble, constDouble)
+			| axAng(<vectorExpr>, <doubleExpr>)
+			| invert(<rotExpr>)
+			| orientationOf(<frameExpr>)
+
+<frameExpr> := frame(<rotExpr>, <vectorExpr>)
+			| <frameExpr> * <frameExpr>
+
+
+<controllableConstraints> := {controllableConstraint(<doubleExpr>, <doubleExpr>, <doubleExpr>, <int>, <doubleExpr>)}
+<softConstraints> := {softConstraint(<doubleExpr>, <doubleExpr>, <doubleExpr>, <doubleExpr>, <string>)}
+<hardConstraints> := {hardConstraint(<doubleExpr>, <doubleExpr>, <doubleExpr>)}
