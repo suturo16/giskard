@@ -512,6 +512,19 @@ private:
 						cerr << "Unrecognized attribute '" << attr << "' " << endl;
 						throwParseError(current, end, "Unexpected type");
 					}
+				case FRAME:
+					if (attr.compare("pos") == 0) {
+						VectorOriginOfSpecPtr temp = VectorOriginOfSpecPtr(new VectorOriginOfSpec());
+						temp->set_frame(dynamic_pointer_cast<FrameSpec>(spec));
+						spec = temp;
+						return parseAttributeAccess(spec, current, end, VECTOR);
+					} else if (attr.compare("rot") == 0) {
+						spec = OrientationOfSpecPtr(new OrientationOfSpec(dynamic_pointer_cast<FrameSpec>(spec)));
+						return parseAttributeAccess(spec, current, end, ROTATION);
+					} else {
+						cerr << "Unrecognized attribute '" << attr << "' " << endl;
+						throwParseError(current, end, "Unexpected type");	
+					}
 				break;
 				default:
 					cerr << "Unknown attribute '" << attr << "' for type '" << typeNames[t] << "'" << endl;
@@ -529,6 +542,7 @@ private:
 		SIt first1 = current;
 		char c = *current;
 		bool negate = c == '-';
+		bool isConstDouble = false;
 		if (negate) {
 			current++;
 			consumeSpaces(current, end);
@@ -539,9 +553,11 @@ private:
 
 		c = *current;
 
+		EType t = NONE;
+
 		if (c == '(') {
 			current++;
-			EType t = parseExpression(spec, current, end);
+			t = parseExpression(spec, current, end);
 			if(consumeSpaces(current, end))
 				throw EOSException();
 
@@ -551,44 +567,17 @@ private:
 				throwParseError(current, end, "Unexpected type");
 			}
 
-			if (negate) {
-				switch(t) {
-					case DOUBLE:
-						{
-						DoubleSpecPtr b = dynamic_pointer_cast<DoubleSpec>(spec);
-						DoubleSubtractionSpecPtr temp = DoubleSubtractionSpecPtr(new DoubleSubtractionSpec());
-						vector<DoubleSpecPtr> inputs {constDZeroPtr, b};
-						temp->set_inputs(inputs);
-						spec = temp;
-						}
-						break;
-					case VECTOR:
-						{
-						VectorSpecPtr b = dynamic_pointer_cast<VectorSpec>(spec);
-						VectorDoubleMultiplicationSpecPtr temp = VectorDoubleMultiplicationSpecPtr(new VectorDoubleMultiplicationSpec());
-						temp->set_double(constDNegOnePtr);
-						temp->set_vector(b);
-						spec = temp;
-						}
-						break;
-					default:
-						cerr << "Can not negate '" << typeNames[t] << "' in: " << endl
-							 << "   '" << string(first1, current) << "' " << endl;
-
-					throwParseError(current, end, "Unexpected type");
-				}
-			}
-
 			current++;
 
-			return parseAttributeAccess(spec, current, end, t);
+			t = parseAttributeAccess(spec, current, end, t);
 		} else if (isdigit(c) || c == '.') {
 			double d = parseDouble(current, end);
 			if (negate)
 				d = -d;
 
 			spec = DoubleConstSpecPtr(new DoubleConstSpec(d));
-			return parseAttributeAccess(spec, current, end, DOUBLE);
+			t = DOUBLE;
+			isConstDouble = true;
 		} else if (c == '"'){
 			current++;
 
@@ -610,11 +599,9 @@ private:
 			spec = StringSpecPtr(new StringSpec(string(start, current)));
 			current++;
 
-			return parseAttributeAccess(spec, current, end, STRING);
+			t = parseAttributeAccess(spec, current, end, STRING);
 		} else {
 			string name = consumeName(current, end);
-
-			EType t = NONE;
 
 			if (current != end && (*current) == '(') {
 				// PARSE FUNCTION
@@ -650,10 +637,38 @@ private:
 				}
 			}
 
-			return parseAttributeAccess(spec, current, end, t);
+			t = parseAttributeAccess(spec, current, end, t);
 		}
 
-		return NONE;
+		if (negate && !isConstDouble) {
+			switch(t) {
+				case DOUBLE:
+					{
+					DoubleSpecPtr b = dynamic_pointer_cast<DoubleSpec>(spec);
+					DoubleSubtractionSpecPtr temp = DoubleSubtractionSpecPtr(new DoubleSubtractionSpec());
+					vector<DoubleSpecPtr> inputs {constDZeroPtr, b};
+					temp->set_inputs(inputs);
+					spec = temp;
+					}
+					break;
+				case VECTOR:
+					{
+					VectorSpecPtr b = dynamic_pointer_cast<VectorSpec>(spec);
+					VectorDoubleMultiplicationSpecPtr temp = VectorDoubleMultiplicationSpecPtr(new VectorDoubleMultiplicationSpec());
+					temp->set_double(constDNegOnePtr);
+					temp->set_vector(b);
+					spec = temp;
+					}
+					break;
+				default:
+					cerr << "Can not negate '" << typeNames[t] << "' in: " << endl
+						 << "   '" << string(first1, current) << "' " << endl;
+
+				throwParseError(current, end, "Unexpected type");
+			}
+		}
+
+		return t;
 	}
 
 	void printTypes(const vector<EType>& v) {
@@ -880,9 +895,9 @@ private:
 			parseNTuple(specs, types, current, end);
 			if (types.size() == 3 && types[0] == DOUBLE && types[1] == DOUBLE && types[2] == DOUBLE) {
 				HardConstraintSpecPtr temp = HardConstraintSpecPtr(new HardConstraintSpec());
-				temp->expression_ = dynamic_pointer_cast<DoubleSpec>(specs[0]);
-				temp->lower_ = dynamic_pointer_cast<DoubleSpec>(specs[1]);
-				temp->upper_ = dynamic_pointer_cast<DoubleSpec>(specs[2]);
+				temp->lower_ = dynamic_pointer_cast<DoubleSpec>(specs[0]);
+				temp->upper_ = dynamic_pointer_cast<DoubleSpec>(specs[1]);
+				temp->expression_ = dynamic_pointer_cast<DoubleSpec>(specs[2]);
 				spec = temp;
 				return HARDC;
 			} 
@@ -896,10 +911,10 @@ private:
 			parseNTuple(specs, types, current, end);
 			if (types.size() == 5 && types[0] == DOUBLE && types[1] == DOUBLE && types[2] == DOUBLE && types[3] == DOUBLE && types[4] == STRING) {
 				SoftConstraintSpecPtr temp = SoftConstraintSpecPtr(new SoftConstraintSpec());
-				temp->expression_ = dynamic_pointer_cast<DoubleSpec>(specs[0]);
-				temp->lower_ = dynamic_pointer_cast<DoubleSpec>(specs[1]);
-				temp->upper_ = dynamic_pointer_cast<DoubleSpec>(specs[2]);
-				temp->weight_ = dynamic_pointer_cast<DoubleSpec>(specs[3]);
+				temp->lower_ = dynamic_pointer_cast<DoubleSpec>(specs[0]);
+				temp->upper_ = dynamic_pointer_cast<DoubleSpec>(specs[1]);
+				temp->weight_ = dynamic_pointer_cast<DoubleSpec>(specs[2]);
+				temp->expression_ = dynamic_pointer_cast<DoubleSpec>(specs[3]);
 				temp->name_ = dynamic_pointer_cast<StringSpec>(specs[4])->get_value();
 				spec = temp;
 				return SOFTC;
