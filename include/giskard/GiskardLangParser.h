@@ -1034,11 +1034,15 @@ private:
 			if (types.size() == 1 && types[0] == ROTATION) {
 				spec = InverseRotationSpecPtr(new InverseRotationSpec(dynamic_pointer_cast<RotationSpec>(specs[0])));
 				return ROTATION;
+			} else if (types.size() == 1 && types[0] == FRAME) {
+				spec = InverseFrameSpecPtr(new InverseFrameSpec(dynamic_pointer_cast<FrameSpec>(specs[0])));
+				return FRAME;
 			} 
 			cerr << "No overload for " << name << " that takes: ";
 			printTypes(types);
 			cerr << endl << "Candidates are: " << endl
-				 << "   " << name << "(" << typeNames[ROTATION] << ")" << endl;
+				 << "   " << name << "(" << typeNames[ROTATION] << ")" << endl
+				 << "   " << name << "(" << typeNames[FRAME] << ")" << endl;
 			throwParseError(current, end, "Unexpected type");
 
 		} else {
