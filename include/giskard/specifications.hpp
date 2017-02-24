@@ -2248,6 +2248,47 @@ const VectorSpecPtr& get_lhs() const
 
   typedef typename boost::shared_ptr<FrameReferenceSpec> FrameReferenceSpecPtr;
 
+
+  class InverseFrameSpec: public FrameSpec
+  {
+    public:
+      InverseFrameSpec() :
+        frame_(frame_constructor_spec(vector_constructor_spec(), quaternion_spec(0,0,0,1))) {}
+      InverseFrameSpec(const FrameSpecPtr& frame) :
+        frame_( frame ) {}
+
+      const giskard::FrameSpecPtr& get_frame() const
+      {
+        return frame_;
+      }
+
+      void set_frame(const giskard::FrameSpecPtr& frame)
+      {
+        frame_ = frame;
+      }
+
+      virtual bool equals(const Spec& other) const
+      {
+        if(!dynamic_cast<const InverseFrameSpec*>(&other))
+          return false;
+
+        const InverseFrameSpec* other_p = dynamic_cast<const InverseFrameSpec*>(&other);
+
+        return get_frame().get() && other_p->get_frame().get() &&
+            get_frame()->equals(*(other_p->get_frame()));
+      }
+
+      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(const giskard::Scope& scope)
+      {
+        return KDL::inv(frame_->get_expression(scope));
+      }
+
+    private:
+      FrameSpecPtr frame_;
+  };
+
+  typedef typename boost::shared_ptr<InverseFrameSpec> InverseFrameSpecPtr;
+
   ///
   /// Specification of a Scope
   ///

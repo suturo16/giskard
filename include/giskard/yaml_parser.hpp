@@ -1827,6 +1827,33 @@ namespace YAML {
     }
   };
 
+  inline bool is_inverse_frame(const Node& node)
+  {
+    return node.IsMap() && (node.size() == 1) && node["inverse-frame"];
+  }
+
+  template<>
+  struct convert<giskard::InverseFrameSpecPtr> 
+  {
+    static Node encode(const giskard::InverseFrameSpecPtr& rhs) 
+    {
+      Node node;
+      node["inverse-frame"] = rhs->get_frame();
+      return node;
+    }
+  
+    static bool decode(const Node& node, giskard::InverseFrameSpecPtr& rhs) 
+    {
+      if(!is_inverse_frame(node))
+        return false;
+
+      rhs = giskard::InverseFrameSpecPtr(new giskard::InverseFrameSpec()); 
+      rhs->set_frame(node["inverse-frame"].as<giskard::FrameSpecPtr>());
+
+      return true;
+    }
+  };
+
   template<>
   struct convert<giskard::FrameSpecPtr> 
   {
@@ -1842,6 +1869,8 @@ namespace YAML {
         node = boost::dynamic_pointer_cast<giskard::FrameMultiplicationSpec>(rhs);
       else if (boost::dynamic_pointer_cast<giskard::FrameReferenceSpec>(rhs).get())
         node = boost::dynamic_pointer_cast<giskard::FrameReferenceSpec>(rhs);
+      else if (boost::dynamic_pointer_cast<giskard::InverseFrameSpec>(rhs).get())
+        node = boost::dynamic_pointer_cast<giskard::InverseFrameSpec>(rhs);
 
       return node;
     }
@@ -1866,6 +1895,11 @@ namespace YAML {
       else if(is_frame_reference(node))
       {
         rhs = node.as<giskard::FrameReferenceSpecPtr>();
+        return true;
+      }
+      else if(is_inverse_frame(node))
+      {
+        rhs = node.as<giskard::InverseFrameSpecPtr>();
         return true;
       }
       else {
@@ -1909,7 +1943,7 @@ namespace YAML {
   inline bool is_frame_spec(const Node& node)
   {
     return is_cached_frame(node) || is_constructor_frame(node) || 
-        is_frame_multiplication(node) || is_frame_reference(node);
+        is_frame_multiplication(node) || is_frame_reference(node) || is_inverse_frame(node);
   }
 
   template<>
