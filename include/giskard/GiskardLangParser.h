@@ -847,6 +847,22 @@ private:
 				 << "   " << name << "(" << typeNames[DOUBLE] << ", " << typeNames[DOUBLE] << ")" << endl;
 			throwParseError(current, end, "Unexpected type");	
 
+		} else if (name.compare("if") == 0) {
+			parseNTuple(specs, types, current, end);
+			if (types.size() == 3 && types[0] == DOUBLE && types[1] == DOUBLE && types[2] == DOUBLE) {
+				DoubleIfSpecPtr temp = DoubleIfSpecPtr(new DoubleIfSpec());
+				temp->set_condition(dynamic_pointer_cast<DoubleSpec>(specs[0]));
+				temp->set_if(dynamic_pointer_cast<DoubleSpec>(specs[1]));
+				temp->set_else(dynamic_pointer_cast<DoubleSpec>(specs[2]));
+				spec = temp;
+				return DOUBLE;
+			} 
+			cerr << "No overload for " << name << " that takes: ";
+			printTypes(types);
+			cerr << endl << "Candidates are: " << endl
+				 << "   " << name << "(" << typeNames[DOUBLE] << ", " << typeNames[DOUBLE] << ", " << typeNames[DOUBLE] << ")" << endl;
+			throwParseError(current, end, "Unexpected type");
+
 		} else if (name.compare("norm") == 0) {
 			parseNTuple(specs, types, current, end);
 			if (types.size() == 1 && types[0] == VECTOR) {
