@@ -803,18 +803,64 @@ private:
 				 << "   " << name << "(" << typeNames[DOUBLE] << ", " << typeNames[DOUBLE] << ")" << endl;
 			throwParseError(current, end, "Unexpected type");
 		
-		} else if (name.compare("input") == 0) {
+		} else if (name.compare("inputScalar") == 0) {
 			parseNTuple(specs, types, current, end);
-			if (types.size() == 1 && types[0] == DOUBLE) {
-				DoubleInputSpecPtr temp = DoubleInputSpecPtr(new DoubleInputSpec());
-				temp->set_input_num(constDoubleToInt(specs[0]));
-				spec = temp;
+			if (types.size() == 1 && types[0] == STRING) {
+				spec = DoubleInputSpecPtr(new DoubleInputSpec(dynamic_pointer_cast<StringSpec>(specs[0])->get_value()));
 				return DOUBLE;
 			} 
 			cerr << "No overload for " << name << " that takes: ";
 			printTypes(types);
 			cerr << endl << "Candidates are: " << endl
-				 << "   " << name << "(" << typeNames[INTEGER] << ")" << endl;
+				 << "   " << name << "(" << typeNames[STRING] << ")" << endl;
+			throwParseError(current, end, "Unexpected type");	
+
+		} else if (name.compare("inputJoint") == 0) {
+			parseNTuple(specs, types, current, end);
+			if (types.size() == 1 && types[0] == STRING) {
+				spec = JointInputSpecPtr(new JointInputSpec(dynamic_pointer_cast<StringSpec>(specs[0])->get_value()));
+				return DOUBLE;
+			} 
+			cerr << "No overload for " << name << " that takes: ";
+			printTypes(types);
+			cerr << endl << "Candidates are: " << endl
+				 << "   " << name << "(" << typeNames[STRING] << ")" << endl;
+			throwParseError(current, end, "Unexpected type");	
+
+		} else if (name.compare("inputVec3") == 0) {
+			parseNTuple(specs, types, current, end);
+			if (types.size() == 1 && types[0] == STRING) {
+				spec = VectorInputSpecPtr(new VectorInputSpec(dynamic_pointer_cast<StringSpec>(specs[0])->get_value()));
+				return VECTOR;
+			} 
+			cerr << "No overload for " << name << " that takes: ";
+			printTypes(types);
+			cerr << endl << "Candidates are: " << endl
+				 << "   " << name << "(" << typeNames[STRING] << ")" << endl;
+			throwParseError(current, end, "Unexpected type");	
+
+		} else if (name.compare("inputRot") == 0) {
+			parseNTuple(specs, types, current, end);
+			if (types.size() == 1 && types[0] == STRING) {
+				spec = RotationInputSpecPtr(new RotationInputSpec(dynamic_pointer_cast<StringSpec>(specs[0])->get_value()));
+				return ROTATION;
+			} 
+			cerr << "No overload for " << name << " that takes: ";
+			printTypes(types);
+			cerr << endl << "Candidates are: " << endl
+				 << "   " << name << "(" << typeNames[STRING] << ")" << endl;
+			throwParseError(current, end, "Unexpected type");	
+
+		} else if (name.compare("inputFrame") == 0) {
+			parseNTuple(specs, types, current, end);
+			if (types.size() == 1 && types[0] == STRING) {
+				spec = FrameInputSpecPtr(new FrameInputSpec(dynamic_pointer_cast<StringSpec>(specs[0])->get_value()));
+				return FRAME;
+			} 
+			cerr << "No overload for " << name << " that takes: ";
+			printTypes(types);
+			cerr << endl << "Candidates are: " << endl
+				 << "   " << name << "(" << typeNames[STRING] << ")" << endl;
 			throwParseError(current, end, "Unexpected type");	
 
 		} else if (name.compare("max") == 0) {
@@ -891,13 +937,12 @@ private:
 		
 		} else if (name.compare("controllableConstraint") == 0) {
 			parseNTuple(specs, types, current, end);
-			if (types.size() == 5 && types[0] == DOUBLE && types[1] == DOUBLE && types[2] == DOUBLE && types[3] == DOUBLE && types[4] == STRING) {
+			if (types.size() == 4 && types[0] == DOUBLE && types[1] == DOUBLE && types[2] == DOUBLE && types[3] == STRING) {
 				ControllableConstraintSpecPtr temp = ControllableConstraintSpecPtr(new ControllableConstraintSpec());
 				temp->lower_ = dynamic_pointer_cast<DoubleSpec>(specs[0]);
 				temp->upper_ = dynamic_pointer_cast<DoubleSpec>(specs[1]);
 				temp->weight_ = dynamic_pointer_cast<DoubleSpec>(specs[2]);
-				temp->input_number_ = constDoubleToInt(specs[3]);
-				temp->name_ = dynamic_pointer_cast<StringSpec>(specs[4])->get_value();
+				temp->input = dynamic_pointer_cast<StringSpec>(specs[3])->get_value();
 				spec = temp;
 				return CTRLC;
 			} 
@@ -1111,4 +1156,5 @@ private:
 		}
 	}
 };
+
 }

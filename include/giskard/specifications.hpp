@@ -61,7 +61,7 @@ namespace giskard
     public:
       virtual bool equals(const Spec& other) const = 0;
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope) = 0;
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope) = 0;
   };
 
   typedef typename boost::shared_ptr<DoubleSpec> DoubleSpecPtr;
@@ -71,7 +71,7 @@ namespace giskard
     public:
       virtual bool equals(const Spec& other) const = 0;
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope) = 0;
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope) = 0;
   };
 
   typedef typename boost::shared_ptr<VectorSpec> VectorSpecPtr;
@@ -81,7 +81,7 @@ namespace giskard
     public:
       virtual bool equals(const Spec& other) const = 0;
 
-      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(const giskard::Scope& scope) = 0;
+      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(giskard::Scope& scope) = 0;
   };
 
   typedef typename boost::shared_ptr<RotationSpec> RotationSpecPtr;
@@ -91,7 +91,7 @@ namespace giskard
     public:
       virtual bool equals(const Spec& other) const = 0;
 
-      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(const giskard::Scope& scope) = 0;
+      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(giskard::Scope& scope) = 0;
   };
 
   typedef typename boost::shared_ptr<FrameSpec> FrameSpecPtr;
@@ -127,7 +127,7 @@ namespace giskard
             std::abs(dynamic_cast<const DoubleConstSpec*>(&other)->get_value() - this->get_value());
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::Constant(get_value());
       }
@@ -146,14 +146,16 @@ namespace giskard
   class DoubleInputSpec : public DoubleSpec
   {
     public:
-      size_t get_input_num() const
-      {
-        return input_num_;
+      DoubleInputSpec() {} 
+      DoubleInputSpec(const std::string& _name)
+      : input(_name) {}
+
+      std::string get_input_name() const {
+        return input;
       }
 
-      void set_input_num(size_t input_num)
-      {
-        input_num_ = input_num;
+      void set_input_name(std::string inputName) {
+        input = inputName;
       }
 
       virtual bool equals(const Spec& other) const
@@ -161,19 +163,53 @@ namespace giskard
         if(!dynamic_cast<const DoubleInputSpec*>(&other))
           return false;
 
-        return dynamic_cast<const DoubleInputSpec*>(&other)->get_input_num() == this->get_input_num();
+        return dynamic_cast<const DoubleInputSpec*>(&other)->get_input_name() == this->get_input_name();
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
-        return KDL::input(get_input_num());
+        return scope.add_scalar_input(input);
       }
 
     private:
-      size_t input_num_;
+      std::string input;
   };
 
   typedef typename boost::shared_ptr<DoubleInputSpec> DoubleInputSpecPtr;
+
+  class JointInputSpec : public DoubleSpec
+  {
+    public:
+      JointInputSpec() {} 
+      JointInputSpec(const std::string& _name)
+      : input(_name) {}
+
+      std::string get_input_name() const {
+        return input;
+      }
+
+      void set_input_name(std::string inputName) {
+        input = inputName;
+      }
+
+      virtual bool equals(const Spec& other) const
+      {
+        if(!dynamic_cast<const JointInputSpec*>(&other))
+          return false;
+
+        return dynamic_cast<const JointInputSpec*>(&other)->get_input_name() == this->get_input_name();
+      }
+
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
+      {
+        return scope.add_joint_input(input);
+      }
+
+    private:
+      std::string input;
+  };
+
+  typedef typename boost::shared_ptr<JointInputSpec> JointInputSpecPtr;
 
   class DoubleReferenceSpec : public DoubleSpec
   {
@@ -196,7 +232,7 @@ namespace giskard
         return (dynamic_cast<const DoubleReferenceSpec*>(&other)->get_reference_name().compare(this->get_reference_name()) == 0);
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return scope.find_double_expression(get_reference_name());
       }
@@ -249,7 +285,7 @@ namespace giskard
         return true;
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         KDL::Expression<double>::Ptr result = KDL::Constant(0.0);
         using KDL::operator+;
@@ -307,7 +343,7 @@ namespace giskard
         return true;
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         if(get_inputs().size() == 0)
           throw std::length_error("Found DoubleSubtractionSpec with zero inputs.");
@@ -357,7 +393,7 @@ namespace giskard
         return dynamic_cast<const DoubleNormOfSpec*>(&other)->get_vector()->equals(*(this->get_vector()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::norm(get_vector()->get_expression(scope));
       }
@@ -410,7 +446,7 @@ namespace giskard
         return true;
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         KDL::Expression<double>::Ptr result = KDL::Constant(1.0);
 
@@ -469,7 +505,7 @@ namespace giskard
         return true;
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         if(get_inputs().size() == 0)
           throw std::length_error("Found DoubleDivisionSpec with zero inputs.");
@@ -519,7 +555,7 @@ namespace giskard
         return dynamic_cast<const DoubleXCoordOfSpec*>(&other)->get_vector()->equals(*(this->get_vector()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::coord_x(get_vector()->get_expression(scope));
       }
@@ -551,7 +587,7 @@ namespace giskard
         return dynamic_cast<const DoubleYCoordOfSpec*>(&other)->get_vector()->equals(*(this->get_vector()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::coord_y(get_vector()->get_expression(scope));
       }
@@ -583,7 +619,7 @@ namespace giskard
         return dynamic_cast<const DoubleZCoordOfSpec*>(&other)->get_vector()->equals(*(this->get_vector()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::coord_z(get_vector()->get_expression(scope));
       }
@@ -630,7 +666,7 @@ namespace giskard
             get_rhs()->equals(*(other_p->get_rhs()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::dot(get_lhs()->get_expression(scope), get_rhs()->get_expression(scope));
       }
@@ -677,7 +713,7 @@ namespace giskard
             get_rhs()->equals(*(other_p->get_rhs()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::minimum(get_lhs()->get_expression(scope), get_rhs()->get_expression(scope));
       }
@@ -724,7 +760,7 @@ namespace giskard
             get_rhs()->equals(*(other_p->get_rhs()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::maximum(get_lhs()->get_expression(scope), get_rhs()->get_expression(scope));
       }
@@ -759,7 +795,7 @@ namespace giskard
             get_value()->equals(*(other_p->get_value()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::abs(get_value()->get_expression(scope));
       }
@@ -817,7 +853,7 @@ namespace giskard
             get_else()->equals(*(other_p->get_else()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::conditional<double>(get_condition()->get_expression(scope), get_if()->get_expression(scope), get_else()->get_expression(scope));
       }
@@ -870,7 +906,7 @@ namespace giskard
                (get_denominator()->equals(*( other_p->get_denominator())));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         // note: This expression only expects a TRUE expressions for the nominator.
         //       While this makes sense, it does break code symmetry.
@@ -911,7 +947,7 @@ namespace giskard
             get_value()->equals(*(other_p->get_value()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::sin(get_value()->get_expression(scope));
       }
@@ -946,7 +982,7 @@ namespace giskard
             get_value()->equals(*(other_p->get_value()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::cos(get_value()->get_expression(scope));
       }
@@ -981,7 +1017,7 @@ namespace giskard
             get_value()->equals(*(other_p->get_value()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::tan(get_value()->get_expression(scope));
       }
@@ -1017,7 +1053,7 @@ namespace giskard
             get_value()->equals(*(other_p->get_value()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::asin(get_value()->get_expression(scope));
       }
@@ -1052,7 +1088,7 @@ namespace giskard
             get_value()->equals(*(other_p->get_value()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::acos(get_value()->get_expression(scope));
       }
@@ -1087,7 +1123,7 @@ namespace giskard
             get_value()->equals(*(other_p->get_value()));
       }
 
-      virtual KDL::Expression<double>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<double>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::atan(get_value()->get_expression(scope));
       }
@@ -1101,6 +1137,40 @@ namespace giskard
   ///
   /// specifications of vector expressions
   ///
+
+  class VectorInputSpec : public VectorSpec
+  {
+    public:
+      VectorInputSpec() {} 
+      VectorInputSpec(const std::string& _name)
+      : input(_name) {}
+
+      std::string get_input_name() const {
+        return input;
+      }
+
+      void set_input_name(std::string inputName) {
+        input = inputName;
+      }
+
+      virtual bool equals(const Spec& other) const
+      {
+        if(!dynamic_cast<const VectorInputSpec*>(&other))
+          return false;
+
+        return dynamic_cast<const VectorInputSpec*>(&other)->get_input_name() == this->get_input_name();
+      }
+
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
+      {
+        return scope.add_vector_input(input);
+      }
+
+    private:
+      std::string input;
+  };
+
+  typedef typename boost::shared_ptr<VectorInputSpec> VectorInputSpecPtr;
 
   class VectorCachedSpec: public VectorSpec
   {
@@ -1126,7 +1196,7 @@ namespace giskard
             get_vector()->equals(*(other_p->get_vector()));
       }
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::cached<KDL::Vector>(get_vector()->get_expression(scope));
       }
@@ -1205,7 +1275,7 @@ namespace giskard
         return get_x().get() && get_y().get() && get_z().get();
       }
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::vector(get_x()->get_expression(scope), 
             get_y()->get_expression(scope), get_z()->get_expression(scope));
@@ -1265,7 +1335,7 @@ namespace giskard
         return true;
       }
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
       {
         using KDL::operator+;
 
@@ -1325,7 +1395,7 @@ namespace giskard
         return true;
       }
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
       {
         if(get_inputs().size() == 0)
           throw std::length_error("Found VectorSubtractionSpec with zero inputs.");
@@ -1375,7 +1445,7 @@ namespace giskard
         return (dynamic_cast<const VectorReferenceSpec*>(&other)->get_reference_name().compare(this->get_reference_name()) == 0);
       }
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
       {
         return scope.find_vector_expression(get_reference_name());
       }
@@ -1407,7 +1477,7 @@ namespace giskard
         return dynamic_cast<const VectorOriginOfSpec*>(&other)->get_frame()->equals(*(this->get_frame()));
       }
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::origin(get_frame()->get_expression(scope));
       }
@@ -1453,7 +1523,7 @@ namespace giskard
             get_vector()->equals(*(other_p->get_vector()));
       }
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
       {
         using KDL::operator*;
 
@@ -1502,7 +1572,7 @@ namespace giskard
             get_vector()->equals(*(other_p->get_vector()));
       }
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
       {
         using KDL::operator*;
 
@@ -1553,7 +1623,7 @@ namespace giskard
             get_vector()->equals(*(other_p->get_vector()));
       }
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
       {
         using KDL::operator*;
 
@@ -1588,7 +1658,7 @@ namespace giskard
         return dynamic_cast<const VectorRotationVectorSpec*>(&other)->get_rotation()->equals(*(this->get_rotation()));
       }
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::getRotVec(get_rotation()->get_expression(scope));
       }
@@ -1636,7 +1706,7 @@ const VectorSpecPtr& get_lhs() const
             get_rhs()->equals(*(other_p->get_rhs()));
       }
 
-      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Vector>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::cross(get_lhs()->get_expression(scope), get_rhs()->get_expression(scope));
       }
@@ -1650,6 +1720,40 @@ const VectorSpecPtr& get_lhs() const
   ///
   /// specifications for rotation expresssions
   ///
+
+  class RotationInputSpec : public RotationSpec
+  {
+    public:
+      RotationInputSpec() {} 
+      RotationInputSpec(const std::string& _name)
+      : input(_name) {}
+
+      std::string get_input_name() const {
+        return input;
+      }
+
+      void set_input_name(std::string inputName) {
+        input = inputName;
+      }
+
+      virtual bool equals(const Spec& other) const
+      {
+        if(!dynamic_cast<const RotationInputSpec*>(&other))
+          return false;
+
+        return dynamic_cast<const RotationInputSpec*>(&other)->get_input_name() == this->get_input_name();
+      }
+
+      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(giskard::Scope& scope)
+      {
+        return scope.add_rotation_input(input);
+      }
+
+    private:
+      std::string input;
+  };
+
+  typedef typename boost::shared_ptr<RotationInputSpec> RotationInputSpecPtr;
 
   class RotationQuaternionConstructorSpec : public RotationSpec
   {
@@ -1711,7 +1815,7 @@ const VectorSpecPtr& get_lhs() const
             (KDL::epsilon > std::abs(dynamic_cast<const RotationQuaternionConstructorSpec*>(&other)->get_y() - this->get_y())) && (KDL::epsilon > std::abs(dynamic_cast<const RotationQuaternionConstructorSpec*>(&other)->get_z() - this->get_z())) && (KDL::epsilon > std::abs(dynamic_cast<const RotationQuaternionConstructorSpec*>(&other)->get_w() - this->get_w()));
       }
 
-      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::Constant(KDL::Rotation::Quaternion(get_x(), get_y(), get_z(), get_w()));
       }
@@ -1769,7 +1873,7 @@ const VectorSpecPtr& get_lhs() const
                (get_axis()->equals(*( other_p->get_axis())));
       }
 
-      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(giskard::Scope& scope)
       {
         // FIXME: add normalization of rotation axis
         return KDL::rotVec(get_axis()->get_expression(scope),
@@ -1836,7 +1940,7 @@ const VectorSpecPtr& get_lhs() const
                (get_param()->equals(*( other_p->get_param())));
       }
 
-      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(giskard::Scope& scope)
       {
         // NOTE: This type of expression not part of the original KDL::expressiongraph
         //       library. It is actually part of giskard.
@@ -1873,7 +1977,7 @@ const VectorSpecPtr& get_lhs() const
         return (dynamic_cast<const RotationReferenceSpec*>(&other)->get_reference_name().compare(this->get_reference_name()) == 0);
       }
 
-      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(giskard::Scope& scope)
       {
         return scope.find_rotation_expression(get_reference_name());
       }
@@ -1913,7 +2017,7 @@ const VectorSpecPtr& get_lhs() const
         return dynamic_cast<const InverseRotationSpec*>(&other)->get_rotation()->equals(*(this->get_rotation()));
       }
 
-      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::inv(get_rotation()->get_expression(scope));
       }
@@ -1980,7 +2084,7 @@ const VectorSpecPtr& get_lhs() const
         return true;
       }
 
-      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(giskard::Scope& scope)
       {
         KDL::Expression<KDL::Rotation>::Ptr result = KDL::Constant(KDL::Rotation::Identity());
 
@@ -2006,6 +2110,40 @@ const VectorSpecPtr& get_lhs() const
   /// specifications for frame expresssions
   ///
 
+  class FrameInputSpec : public FrameSpec
+  {
+    public:
+      FrameInputSpec() {} 
+      FrameInputSpec(const std::string& _name)
+      : input(_name) {}
+
+      std::string get_input_name() const {
+        return input;
+      }
+
+      void set_input_name(std::string inputName) {
+        input = inputName;
+      }
+
+      virtual bool equals(const Spec& other) const
+      {
+        if(!dynamic_cast<const FrameInputSpec*>(&other))
+          return false;
+
+        return dynamic_cast<const FrameInputSpec*>(&other)->get_input_name() == this->get_input_name();
+      }
+
+      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(giskard::Scope& scope)
+      {
+        return scope.add_frame_input(input);
+      }
+
+    private:
+      std::string input;
+  };
+
+  typedef typename boost::shared_ptr<FrameInputSpec> FrameInputSpecPtr;
+
   class FrameCachedSpec: public FrameSpec
   {
     public:
@@ -2030,7 +2168,7 @@ const VectorSpecPtr& get_lhs() const
             get_frame()->equals(*(other_p->get_frame()));
       }
 
-      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::cached<KDL::Frame>(get_frame()->get_expression(scope));
       }
@@ -2091,7 +2229,7 @@ const VectorSpecPtr& get_lhs() const
         return get_translation().get() && get_rotation().get();
       }
 
-      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(giskard::Scope& scope)
       {
         KDL::Expression<KDL::Rotation>::Ptr rot = get_rotation()->get_expression(scope);
 
@@ -2141,7 +2279,7 @@ const VectorSpecPtr& get_lhs() const
         return dynamic_cast<const OrientationOfSpec*>(&other)->get_frame()->equals(*(this->get_frame()));
       }
 
-      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Rotation>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::rotation(get_frame()->get_expression(scope));
       }
@@ -2199,7 +2337,7 @@ const VectorSpecPtr& get_lhs() const
         return true;
       }
 
-      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(giskard::Scope& scope)
       {
         KDL::Expression<KDL::Frame>::Ptr result = KDL::Constant(KDL::Frame::Identity());
 
@@ -2237,7 +2375,7 @@ const VectorSpecPtr& get_lhs() const
         return (dynamic_cast<const FrameReferenceSpec*>(&other)->get_reference_name().compare(this->get_reference_name()) == 0);
       }
 
-      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(giskard::Scope& scope)
       {
         return scope.find_frame_expression(get_reference_name());
       }
@@ -2278,7 +2416,7 @@ const VectorSpecPtr& get_lhs() const
             get_frame()->equals(*(other_p->get_frame()));
       }
 
-      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(const giskard::Scope& scope)
+      virtual KDL::Expression<KDL::Frame>::Ptr get_expression(giskard::Scope& scope)
       {
         return KDL::inv(frame_->get_expression(scope));
       }
@@ -2314,13 +2452,11 @@ const VectorSpecPtr& get_lhs() const
         return b->lower_ && lower_ && lower_->equals(*b->lower_)
                && b->upper_ && upper_ && upper_->equals(*b->upper_)
                && b->weight_ && weight_ && weight_->equals(*b->weight_)
-               && b->input_number_ == input_number_
-               && name_.compare(b->name_) == 0;
+               && b->input.compare(input);
       }
 
       giskard::DoubleSpecPtr lower_, upper_, weight_;
-      size_t input_number_;
-      std::string name_;
+      std::string input;
   };
 
   typedef typename boost::shared_ptr<ControllableConstraintSpec> ControllableConstraintSpecPtr;
