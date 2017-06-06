@@ -384,6 +384,23 @@ namespace giskard
         return nextInputIndex;
       }
 
+      std::map< std::string, KDL::Expression<double>::Ptr > get_scalar_expressions() const { 
+        return double_references_; 
+      }
+
+      std::map< std::string, KDL::Expression<KDL::Vector>::Ptr > get_vector_expressions() const { 
+        return vector_references_; 
+      }
+
+      std::map< std::string, KDL::Expression<KDL::Rotation>::Ptr > get_rotation_expressions() const { 
+        return rotation_references_; 
+      }
+
+      std::map< std::string, KDL::Expression<KDL::Frame>::Ptr > get_frame_expressions() const { 
+        return frame_references_; 
+      }
+
+
     private:
       std::map< std::string, KDL::Expression<double>::Ptr > double_references_;
       std::map< std::string, KDL::Expression<KDL::Vector>::Ptr > vector_references_;
